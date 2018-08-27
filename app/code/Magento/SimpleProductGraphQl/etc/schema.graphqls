@@ -1,0 +1,50 @@
+# Copyright © Magento, Inc. All rights reserved.
+# See COPYING.txt for license details.
+
+type Mutation {
+    addSimpleProductsToCart(input: AddSimpleProductsToCartInput): AddSimpleProductsToCartOutput @resolver(class: "Magento\\SimpleProductGraphQl\\Model\\Resolver\\Product\\AddSimpleProductsToCart")
+}
+
+input AddSimpleProductsToCartInput {
+    cart_id: String!
+    cartItems: [SimpleProductCartItemInput!]!
+}
+
+input SimpleProductCartItemInput {
+    details: CartItemDetailsInput!
+    customizable_options:[CustomizableOptionInput!]
+}
+
+type AddSimpleProductsToCartOutput {
+    cart: Cart!
+}
+
+type SimpleCartItem implements CartItemInterface {
+    customizable_options: [SelectedCustomizableOption]
+}
+
+type SelectedCustomizableOption {
+    id: Int!
+    label: String!
+    type: String!
+    values: [SelectedCustomizableOptionValue!]!
+    sort_order: Int!
+}
+
+type SelectedCustomizableOptionValue {
+    id: Int
+    label: String!
+    price: CartItemSelectedOptionValuePrice!
+    sort_order: Int!
+}
+
+type CartItemSelectedOptionValuePrice {
+    value: Float!
+    units: String!
+    type: PriceTypeEnum!
+}
+
+input CustomizableOptionInput {
+    id: Int!
+    value: String!
+}

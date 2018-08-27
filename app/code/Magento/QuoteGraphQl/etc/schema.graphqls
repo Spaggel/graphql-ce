@@ -4,3 +4,18 @@
 type Mutation {
     createEmptyCart: String @resolver(class: "\\Magento\\QuoteGraphQl\\Model\\Resolver\\Cart\\CreateEmptyCart") @doc(description:"Creates empty shopping cart for guest or logged in user")
 }
+
+type Cart {
+    items: [CartItemInterface]
+}
+
+input CartItemDetailsInput {
+    sku: String!
+    quantity: Float!
+}
+
+interface CartItemInterface @typeResolver(class: "Magento\\QuoteGraphQl\\Model\\Resolver\\CartItemTypeResolverComposite") {
+    id: String! # Hashed cart item ID
+    qty: Float!
+    product: ProductInterface!
+}
