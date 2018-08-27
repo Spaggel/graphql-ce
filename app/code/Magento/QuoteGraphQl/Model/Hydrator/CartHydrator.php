@@ -9,6 +9,7 @@ namespace Magento\QuoteGraphQl\Model\Hydrator;
 
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Item as QuoteItem;
 
 /**
  * {@inheritdoc}
@@ -24,11 +25,17 @@ class CartHydrator
     {
         $items = [];
 
-        foreach ($cart->getItems() as $cartItem) {
+        /**
+         * @var QuoteItem $cartItem
+         */
+        foreach ($cart->getAllItems() as $cartItem) {
+            $productData = $cartItem->getProduct()->getData();
+            $productData['model'] = $cartItem->getProduct();
+
             $items[] = [
                 'id' => $cartItem->getItemId(),
                 'qty' => $cartItem->getQty(),
-                'product' => $cartItem->getSku(),
+                'product' => $productData
             ];
         }
 

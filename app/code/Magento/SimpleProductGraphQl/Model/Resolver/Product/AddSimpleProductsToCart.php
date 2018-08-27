@@ -16,7 +16,9 @@ use Magento\Framework\GraphQl\Query\Resolver\ValueFactory;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Framework\Stdlib\ArrayManager;
-use Magento\Quote\Model\Quote as QuoteModel;
+use Magento\Quote\Api\Data\CartInterface;
+use Magento\Quote\Api\GuestCartRepositoryInterface;
+use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\QuoteRepository;
 use Magento\QuoteGraphQl\Model\Hydrator\CartHydrator;
 
@@ -25,6 +27,11 @@ use Magento\QuoteGraphQl\Model\Hydrator\CartHydrator;
  */
 class AddSimpleProductsToCart implements ResolverInterface
 {
+    /**
+     * @var GuestCartRepositoryInterface
+     */
+    private $guestCartRepository;
+
     /**
      * @var QuoteRepository
      */
@@ -46,11 +53,6 @@ class AddSimpleProductsToCart implements ResolverInterface
     private $arrayManager;
 
     /**
-     * @var QuoteModel
-     */
-    private $quote;
-
-    /**
      * @var ValueFactory
      */
     private $valueFactory;
@@ -63,6 +65,7 @@ class AddSimpleProductsToCart implements ResolverInterface
     /**
      * @param CartHydrator $cartHydrator
      * @param ArrayManager $arrayManager
+     * @param GuestCartRepositoryInterface $guestCartRepository
      * @param QuoteRepository $quoteRepository
      * @param ProductRepositoryInterface $productRepository
      * @param ValueFactory $valueFactory
@@ -71,6 +74,7 @@ class AddSimpleProductsToCart implements ResolverInterface
     public function __construct(
         CartHydrator $cartHydrator,
         ArrayManager $arrayManager,
+        GuestCartRepositoryInterface $guestCartRepository,
         QuoteRepository $quoteRepository,
         ProductRepositoryInterface $productRepository,
         ValueFactory $valueFactory,
@@ -82,6 +86,7 @@ class AddSimpleProductsToCart implements ResolverInterface
         $this->productRepository = $productRepository;
         $this->cartHydrator = $cartHydrator;
         $this->quoteRepository = $quoteRepository;
+        $this->guestCartRepository = $guestCartRepository;
     }
 
     /**
@@ -106,7 +111,8 @@ class AddSimpleProductsToCart implements ResolverInterface
 
         // todo: add security checking
 
-        $cart = $this->quoteRepository->getActive($cartId);
+        /** @var CartInterface|Quote $cart */
+        $cart = $this->guestCartRepository->get($cartId);
 
         foreach ($cartItems as $cartItem) {
             $sku = $this->arrayManager->get('details/sku', $cartItem);
@@ -118,12 +124,10 @@ class AddSimpleProductsToCart implements ResolverInterface
 
         $this->quoteRepository->save($cart);
 
-        $cartData = [
-            'cart' => $this->cartHydrator->hydrate($cart),
-        ];
-
-        $result = function () use ($cartData) {
-            return $cartData;
+        $result = function () use ($cart) {
+            return [
+                'cart' => $this->cartHydrator->hydrate($cart),
+            ];
         };
 
         return $this->valueFactory->create($result);
