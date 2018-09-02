@@ -35,7 +35,8 @@ class CartHydrator
             $items[] = [
                 'id' => $cartItem->getItemId(),
                 'qty' => $cartItem->getQty(),
-                'product' => $productData
+                'product' => $productData,
+                'model' => $cartItem,
             ];
         }
 
