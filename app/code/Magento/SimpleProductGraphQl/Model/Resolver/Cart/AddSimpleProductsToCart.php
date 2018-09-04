@@ -120,8 +120,6 @@ class AddSimpleProductsToCart implements ResolverInterface
             );
         }
 
-        // todo: add security checking
-
         /** @var CartInterface|Quote $cart */
         $cart = $this->guestCartRepository->get($cartId);
 

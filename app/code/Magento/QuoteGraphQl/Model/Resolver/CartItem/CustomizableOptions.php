@@ -135,21 +135,44 @@ class CustomizableOptions implements ResolverInterface
                 'units' => '$',
                 'value' => $optionValue->getPrice(),
             ];
+
+            $selectedOptionValueData = [$selectedOptionValueData];
         }
 
-        if ('field' == $option->getType()) {
+        if ('field' == $option->getType() || 'date' == $option->getType()) {
             $selectedOptionValueData['price'] = [
                 'type' => strtoupper($option->getPriceType()),
                 'units' => '$',
                 'value' => $option->getPrice(),
             ];
+
+            $selectedOptionValueData = [$selectedOptionValueData];
+        }
+
+        if ('multiple' == $option->getType()) {
+            $selectedOptionValueData = [];
+            $optionIds = explode(',', $itemOption->getValue());
+
+            foreach ($optionIds as $optionId) {
+                $optionValue = $option->getValueById($optionId);
+
+                $selectedOptionValueData[] = [
+                    'id' => $itemOption->getId(),
+                    'label' => $optionValue->getTitle(),
+                    'price' => [
+                        'type' => strtoupper($optionValue->getPriceType()),
+                        'units' => '$',
+                        'value' => $optionValue->getPrice(),
+                    ],
+                ];
+            }
         }
 
         return [
             'id' => $option->getId(),
             'label' => $option->getTitle(),
             'type' => $option->getType(),
-            'values' => [$selectedOptionValueData],
+            'values' => $selectedOptionValueData,
             'sort_order' => $option->getSortOrder(),
         ];
     }
