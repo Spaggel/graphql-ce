@@ -32,7 +32,6 @@ type SelectedCustomizableOptionValue {
     id: Int
     label: String!
     price: CartItemSelectedOptionValuePrice!
-    sort_order: Int!
 }
 
 type CartItemSelectedOptionValuePrice {

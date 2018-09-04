@@ -70,9 +70,9 @@ class CustomizableOptions implements ResolverInterface
         $customOptionIds = explode(',', $optionIds->getValue());
 
         foreach ($customOptionIds as $optionId) {
-            $customOptionData = $this->getOptionData($cartItem, $optionId);
+            $customOptionData = $this->getOptionData($cartItem, (int) $optionId);
 
-            if (count($customOptionData) > 0) {
+            if (0 === count($customOptionData)) {
                 continue;
             }
 
@@ -110,6 +110,7 @@ class CustomizableOptions implements ResolverInterface
 
         if ('file' == $option->getType()) {
             $downloadParams = $cartItem->getFileDownloadParams();
+
             if ($downloadParams) {
                 $url = $downloadParams->getUrl();
                 if ($url) {
@@ -122,24 +123,33 @@ class CustomizableOptions implements ResolverInterface
             }
         }
 
-        $optionValue = $option->getValueById($itemOption->getValue());
-        
+        $selectedOptionValueData = [
+            'id' => $itemOption->getId(),
+            'label' => $optionTypeGroup->getFormattedOptionValue($itemOption->getValue()),
+        ];
+
+        if ('drop_down' == $option->getType()) {
+            $optionValue = $option->getValueById($itemOption->getValue());
+            $selectedOptionValueData['price'] = [
+                'type' => strtoupper($optionValue->getPriceType()),
+                'units' => '$',
+                'value' => $optionValue->getPrice(),
+            ];
+        }
+
+        if ('field' == $option->getType()) {
+            $selectedOptionValueData['price'] = [
+                'type' => strtoupper($option->getPriceType()),
+                'units' => '$',
+                'value' => $option->getPrice(),
+            ];
+        }
+
         return [
             'id' => $option->getId(),
             'label' => $option->getTitle(),
             'type' => $option->getType(),
-            'values' => [
-                [
-                    'id' => $optionValue->getId(),
-                    'label' => $optionValue->getTitle(),
-                    'sort_order' => $optionValue->getSortOrder(),
-                    'price' => [
-                        'type' => strtoupper($optionValue->getPriceType()),
-                        'units' => '$',
-                        'value' => $optionValue->getPrice(),
-                    ]
-                ]
-            ],
+            'values' => [$selectedOptionValueData],
             'sort_order' => $option->getSortOrder(),
         ];
     }
