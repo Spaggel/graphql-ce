@@ -38,6 +38,7 @@ class BundleItemLinks implements ResolverInterface
         ValueFactory $valueFactory
     ) {
         $this->linkCollection = $linkCollection;
+        $this->valueFactory = $valueFactory;
     }
 
     /**
