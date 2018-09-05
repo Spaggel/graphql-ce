@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\QuoteGraphQl\Model\Resolver\CartItem;
 
 use Magento\Authorization\Model\UserContextInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
 use Magento\Catalog\Model\Product\Option\Type\DefaultType as DefaultOptionType;
 use Magento\Catalog\Model\Product\Option\Type\Select as SelectOptionType;
 use Magento\Catalog\Model\Product\Option\Type\Text as TextOptionType;
@@ -108,7 +109,7 @@ class CustomizableOptions implements ResolverInterface
             ->setConfigurationItem($cartItem)
             ->setConfigurationItemOption($itemOption);
 
-        if ('file' == $option->getType()) {
+        if (ProductCustomOptionInterface::OPTION_GROUP_FILE == $option->getType()) {
             $downloadParams = $cartItem->getFileDownloadParams();
 
             if ($downloadParams) {
@@ -128,7 +129,9 @@ class CustomizableOptions implements ResolverInterface
             'label' => $optionTypeGroup->getFormattedOptionValue($itemOption->getValue()),
         ];
 
-        if ('drop_down' == $option->getType()) {
+        if (ProductCustomOptionInterface::OPTION_TYPE_DROP_DOWN == $option->getType()
+            || ProductCustomOptionInterface::OPTION_TYPE_RADIO == $option->getType()
+        ) {
             $optionValue = $option->getValueById($itemOption->getValue());
             $selectedOptionValueData['price'] = [
                 'type' => strtoupper($optionValue->getPriceType()),
@@ -139,7 +142,11 @@ class CustomizableOptions implements ResolverInterface
             $selectedOptionValueData = [$selectedOptionValueData];
         }
 
-        if ('field' == $option->getType() || 'date' == $option->getType()) {
+        if (ProductCustomOptionInterface::OPTION_TYPE_FIELD == $option->getType()
+            || ProductCustomOptionInterface::OPTION_TYPE_AREA == $option->getType()
+            || ProductCustomOptionInterface::OPTION_GROUP_DATE == $option->getType()
+            || ProductCustomOptionInterface::OPTION_TYPE_TIME == $option->getType()
+        ) {
             $selectedOptionValueData['price'] = [
                 'type' => strtoupper($option->getPriceType()),
                 'units' => '$',
@@ -149,7 +156,7 @@ class CustomizableOptions implements ResolverInterface
             $selectedOptionValueData = [$selectedOptionValueData];
         }
 
-        if ('multiple' == $option->getType()) {
+        if (ProductCustomOptionInterface::OPTION_TYPE_MULTIPLE == $option->getType()) {
             $selectedOptionValueData = [];
             $optionIds = explode(',', $itemOption->getValue());
 

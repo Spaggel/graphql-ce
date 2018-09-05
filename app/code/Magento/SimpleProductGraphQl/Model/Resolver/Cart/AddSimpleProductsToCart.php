@@ -11,6 +11,7 @@ use Magento\Authorization\Model\UserContextInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\DataObject;
 use Magento\Framework\DataObjectFactory;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Exception\GraphQlInputException;
 use Magento\Framework\GraphQl\Query\Resolver\Value;
@@ -19,10 +20,11 @@ use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Framework\Message\AbstractMessage;
 use Magento\Framework\Stdlib\ArrayManager;
+use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\Data\CartInterface;
 use Magento\Quote\Api\GuestCartRepositoryInterface;
+use Magento\Quote\Model\MaskedQuoteIdToQuoteIdInterface;
 use Magento\Quote\Model\Quote;
-use Magento\Quote\Model\QuoteRepository;
 use Magento\QuoteGraphQl\Model\Hydrator\CartHydrator;
 
 /**
@@ -30,6 +32,16 @@ use Magento\QuoteGraphQl\Model\Hydrator\CartHydrator;
  */
 class AddSimpleProductsToCart implements ResolverInterface
 {
+    /**
+     * @var CartRepositoryInterface
+     */
+    private $cartRepository;
+
+    /**
+     * @var MaskedQuoteIdToQuoteIdInterface
+     */
+    private $maskedQuoteIdToQuoteId;
+
     /**
      * @var DataObjectFactory
      */
@@ -39,11 +51,6 @@ class AddSimpleProductsToCart implements ResolverInterface
      * @var GuestCartRepositoryInterface
      */
     private $guestCartRepository;
-
-    /**
-     * @var QuoteRepository
-     */
-    private $quoteRepository;
 
     /**
      * @var ProductRepositoryInterface
@@ -74,8 +81,9 @@ class AddSimpleProductsToCart implements ResolverInterface
      * @param DataObjectFactory $dataObjectFactory
      * @param CartHydrator $cartHydrator
      * @param ArrayManager $arrayManager
+     * @param MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId
+     * @param CartRepositoryInterface $cartRepository
      * @param GuestCartRepositoryInterface $guestCartRepository
-     * @param QuoteRepository $quoteRepository
      * @param ProductRepositoryInterface $productRepository
      * @param ValueFactory $valueFactory
      * @param UserContextInterface $userContext
@@ -84,8 +92,9 @@ class AddSimpleProductsToCart implements ResolverInterface
         DataObjectFactory $dataObjectFactory,
         CartHydrator $cartHydrator,
         ArrayManager $arrayManager,
+        MaskedQuoteIdToQuoteIdInterface $maskedQuoteIdToQuoteId,
+        CartRepositoryInterface $cartRepository,
         GuestCartRepositoryInterface $guestCartRepository,
-        QuoteRepository $quoteRepository,
         ProductRepositoryInterface $productRepository,
         ValueFactory $valueFactory,
         UserContextInterface $userContext
@@ -95,9 +104,10 @@ class AddSimpleProductsToCart implements ResolverInterface
         $this->arrayManager = $arrayManager;
         $this->productRepository = $productRepository;
         $this->cartHydrator = $cartHydrator;
-        $this->quoteRepository = $quoteRepository;
         $this->guestCartRepository = $guestCartRepository;
         $this->dataObjectFactory = $dataObjectFactory;
+        $this->cartRepository = $cartRepository;
+        $this->maskedQuoteIdToQuoteId = $maskedQuoteIdToQuoteId;
     }
 
     /**
@@ -105,10 +115,10 @@ class AddSimpleProductsToCart implements ResolverInterface
      */
     public function resolve(Field $field, $context, ResolveInfo $info, array $value = null, array $args = null) : Value
     {
-        $cartId = $this->arrayManager->get('input/cart_id', $args);
+        $cartHash = $this->arrayManager->get('input/cart_id', $args);
         $cartItems = $this->arrayManager->get('input/cartItems', $args);
 
-        if (!isset($cartId)) {
+        if (!isset($cartHash)) {
             throw new GraphQlInputException(
                 __('Missing key %1 in cart data', ['cart_id'])
             );
@@ -120,8 +130,7 @@ class AddSimpleProductsToCart implements ResolverInterface
             );
         }
 
-        /** @var CartInterface|Quote $cart */
-        $cart = $this->guestCartRepository->get($cartId);
+        $cart = $this->getCart((string) $cartHash);
 
         foreach ($cartItems as $cartItem) {
             $sku = $this->arrayManager->get('details/sku', $cartItem);
@@ -134,7 +143,7 @@ class AddSimpleProductsToCart implements ResolverInterface
             }
         }
 
-        $this->quoteRepository->save($cart);
+        $this->cartRepository->save($cart);
 
         $result = function () use ($cart) {
             return [
@@ -183,5 +192,22 @@ class AddSimpleProductsToCart implements ResolverInterface
         }
 
         return implode(PHP_EOL, $errorMessages);
+    }
+
+    /**
+     * @param string $cartHash
+     * @return CartInterface|Quote
+     * @throws NoSuchEntityException
+     */
+    private function getCart(string $cartHash): CartInterface
+    {
+        $customerId = $this->userContext->getUserId();
+
+        if (!$customerId) {
+            return $this->guestCartRepository->get($cartHash);
+        }
+
+        $cartId = $this->maskedQuoteIdToQuoteId->execute((string) $cartHash);
+        return $this->cartRepository->get($cartId);
     }
 }
