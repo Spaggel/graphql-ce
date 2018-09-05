@@ -131,6 +131,7 @@ class CustomizableOptions implements ResolverInterface
 
         if (ProductCustomOptionInterface::OPTION_TYPE_DROP_DOWN == $option->getType()
             || ProductCustomOptionInterface::OPTION_TYPE_RADIO == $option->getType()
+            || ProductCustomOptionInterface::OPTION_TYPE_CHECKBOX == $option->getType()
         ) {
             $optionValue = $option->getValueById($itemOption->getValue());
             $selectedOptionValueData['price'] = [

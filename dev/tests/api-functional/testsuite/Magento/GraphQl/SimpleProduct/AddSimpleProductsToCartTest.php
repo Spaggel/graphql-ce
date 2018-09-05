@@ -7,9 +7,10 @@ declare(strict_types=1);
 
 namespace Magento\GraphQl\Quote;
 
-use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Model\Quote as QuoteModel;
-use Magento\Quote\Model\QuoteIdMask;
 use Magento\Quote\Model\QuoteIdToMaskedQuoteIdInterface;
 use Magento\TestFramework\ObjectManager;
 use Magento\TestFramework\TestCase\GraphQlAbstract;
@@ -19,11 +20,6 @@ use Magento\TestFramework\TestCase\GraphQlAbstract;
  */
 class AddSimpleProductsToCartTest extends GraphQlAbstract
 {
-    /**
-     * @var QuoteIdMask
-     */
-    private $quoteIdMask;
-
     /**
      * @var ObjectManager
      */
@@ -40,13 +36,18 @@ class AddSimpleProductsToCartTest extends GraphQlAbstract
     private $quoteIdToMaskedQuote;
 
     /**
+     * @var ProductRepositoryInterface
+     */
+    private $productRepository;
+
+    /**
      * @return void
      */
     protected function setUp()
     {
         $this->objectManager = \Magento\TestFramework\Helper\Bootstrap::getObjectManager();
-        $this->quoteIdMask = $this->objectManager->create(QuoteIdMask::class);
         $this->quoteModel = $this->objectManager->create(QuoteModel::class);
+        $this->productRepository = $this->objectManager->create(ProductRepositoryInterface::class);
         $this->quoteIdToMaskedQuote = $this->objectManager->create(QuoteIdToMaskedQuoteIdInterface::class);
     }
 
@@ -57,8 +58,10 @@ class AddSimpleProductsToCartTest extends GraphQlAbstract
      */
     public function testAddSimpleProductsToCartForGuest()
     {
+        $productSku = 'simple';
         $this->quoteModel->load('test_order_1', 'reserved_order_id');
         $quoteHash = $this->quoteIdToMaskedQuote->execute((int) $this->quoteModel->getId());
+        $selectedOptionData = $this->getSelectedOptionData($productSku);
 
         $query = <<<QUERY
 mutation {
@@ -68,7 +71,7 @@ mutation {
       cartItems: [
         {
           details: {
-            sku: "simple", 
+            sku: "$productSku", 
             qty: 1
           }, 
           customizable_options: [{id: 1, value: "Test"}, {id: 2, value: "Wow"}, {id: 3, value: "test.jpg"}, {id: 5, value: "1"}, {id: 6, value: "3"}]
@@ -119,5 +122,33 @@ QUERY;
         self::assertArrayHasKey('addSimpleProductsToCart', $response);
 
 
+    }
+
+    /**
+     * @param string $productSku
+     * @throws NoSuchEntityException
+     */
+    protected function getSelectedOptionData(string $productSku)
+    {
+        $selectedProductData = [];
+        $product = $this->productRepository->get($productSku);
+        $fieldTypes = [ProductCustomOptionInterface::OPTION_TYPE_AREA, ProductCustomOptionInterface::OPTION_TYPE_FIELD];
+        $dropdownTypes = [
+            ProductCustomOptionInterface::OPTION_TYPE_DROP_DOWN,
+            ProductCustomOptionInterface::OPTION_TYPE_RADIO,
+            ProductCustomOptionInterface::OPTION_TYPE_CHECKBOX,
+        ];
+
+        foreach ($product->getOptions() as $option) {
+            if (in_array($option->getType(), $fieldTypes)) {
+                $selectedProductData[$option->getOptionId()] = $option->getType(); // custom text
+            }
+            if (in_array($option->getType(), $dropdownTypes)) {
+                $optionValues = $option->getValues();
+
+            }
+        }
+
+        return $selectedProductData;
     }
 }
