@@ -6,7 +6,6 @@
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <preference for="Magento\Catalog\Model\Product\Option\Type\Date" type="Magento\CatalogGraphQl\Model\Product\Option\DateType" />
     <type name="Magento\CatalogGraphQl\Model\ProductInterfaceTypeResolverComposite">
         <arguments>
             <argument name="productTypeNameResolvers" xsi:type="array">
@@ -74,11 +73,4 @@
             </argument>
         </arguments>
     </virtualType>
-    <type name="Magento\QuoteGraphQl\Model\Resolver\CartItemTypeResolver">
-        <arguments>
-            <argument name="cartItemTypes" xsi:type="array">
-                <item name="simple" xsi:type="string">SimpleCartItem</item>
-            </argument>
-        </arguments>
-    </type>
 </config>

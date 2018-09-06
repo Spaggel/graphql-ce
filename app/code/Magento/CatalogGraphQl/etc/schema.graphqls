@@ -16,10 +16,6 @@ type Query {
     @resolver(class: "Magento\\CatalogGraphQl\\Model\\Resolver\\CategoryTree")
 }
 
-type Mutation {
-    addSimpleProductsToCart(input: AddSimpleProductsToCartInput): AddSimpleProductsToCartOutput @resolver(class: "Magento\\CatalogGraphQl\\Model\\Resolver\\Cart\\AddSimpleProductsToCart")
-}
-
 enum CurrencyEnum @doc(description: "The list of available currency codes") {
     AFN
     ALL
@@ -554,27 +550,4 @@ type SortField {
 type SortFields @doc(description: "SortFields contains a default value for sort fields and all available sort fields") {
     default: String @doc(description: "Default value of sort fields") 
     options: [SortField] @doc(description: "Available sort fields")
-}
-
-input AddSimpleProductsToCartInput {
-    cart_id: String!
-    cartItems: [SimpleProductCartItemInput!]!
-}
-
-input SimpleProductCartItemInput {
-    details: CartItemDetailsInput!
-    customizable_options:[CustomizableOptionInput!]
-}
-
-input CustomizableOptionInput {
-    id: Int!
-    value: String!
-}
-
-type AddSimpleProductsToCartOutput {
-    cart: Cart!
-}
-
-type SimpleCartItem implements CartItemInterface @doc(description: "Simple Cart Item") {
-    customizable_options: [SelectedCustomizableOption] @resolver(class: "Magento\\QuoteGraphQl\\Model\\Resolver\\CartItem\\CustomizableOptions")
 }

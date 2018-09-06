@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-namespace Magento\CatalogGraphQl\Model\Resolver\Cart;
+namespace Magento\SimpleProductGraphQl\Model\Resolver\Cart;
 
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
