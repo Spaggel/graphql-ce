@@ -29,7 +29,7 @@ type SelectedCustomizableOption {
 }
 
 type SelectedCustomizableOptionValue {
-    id: Int
+    id: Int!
     label: String!
     price: CartItemSelectedOptionValuePrice!
 }
