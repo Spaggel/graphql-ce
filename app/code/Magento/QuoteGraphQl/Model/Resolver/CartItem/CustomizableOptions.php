@@ -9,6 +9,7 @@ namespace Magento\QuoteGraphQl\Model\Resolver\CartItem;
 
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Catalog\Api\Data\ProductCustomOptionInterface;
+use Magento\Catalog\Model\Config\Source\ProductPriceOptionsInterface;
 use Magento\Catalog\Model\Product\Option\Type\DefaultType as DefaultOptionType;
 use Magento\Catalog\Model\Product\Option\Type\Select as SelectOptionType;
 use Magento\Catalog\Model\Product\Option\Type\Text as TextOptionType;
@@ -18,12 +19,20 @@ use Magento\Framework\GraphQl\Query\Resolver\ValueFactory;
 use Magento\Framework\GraphQl\Query\ResolverInterface;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\Quote\Model\Quote\Item as QuoteItem;
+use Magento\Store\Api\Data\StoreInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * {@inheritdoc}
  */
 class CustomizableOptions implements ResolverInterface
 {
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
     /**
      * @var ValueFactory
      */
@@ -37,13 +46,16 @@ class CustomizableOptions implements ResolverInterface
     /**
      * @param ValueFactory $valueFactory
      * @param UserContextInterface $userContext
+     * @param StoreManagerInterface $storeManager
      */
     public function __construct(
         ValueFactory $valueFactory,
-        UserContextInterface $userContext
+        UserContextInterface $userContext,
+        StoreManagerInterface $storeManager
     ) {
         $this->valueFactory = $valueFactory;
         $this->userContext = $userContext;
+        $this->storeManager = $storeManager;
     }
 
     /**
@@ -134,9 +146,11 @@ class CustomizableOptions implements ResolverInterface
             || ProductCustomOptionInterface::OPTION_TYPE_CHECKBOX == $option->getType()
         ) {
             $optionValue = $option->getValueById($itemOption->getValue());
+            $priceValueUnits = $this->getPriceValueUnits($optionValue->getPriceType());
+
             $selectedOptionValueData['price'] = [
                 'type' => strtoupper($optionValue->getPriceType()),
-                'units' => '$',
+                'units' => $priceValueUnits,
                 'value' => $optionValue->getPrice(),
             ];
 
@@ -148,9 +162,11 @@ class CustomizableOptions implements ResolverInterface
             || ProductCustomOptionInterface::OPTION_GROUP_DATE == $option->getType()
             || ProductCustomOptionInterface::OPTION_TYPE_TIME == $option->getType()
         ) {
+            $priceValueUnits = $this->getPriceValueUnits($option->getPriceType());
+
             $selectedOptionValueData['price'] = [
                 'type' => strtoupper($option->getPriceType()),
-                'units' => '$',
+                'units' => $priceValueUnits,
                 'value' => $option->getPrice(),
             ];
 
@@ -163,13 +179,14 @@ class CustomizableOptions implements ResolverInterface
 
             foreach ($optionIds as $optionId) {
                 $optionValue = $option->getValueById($optionId);
+                $priceValueUnits = $this->getPriceValueUnits($optionValue->getPriceType());
 
                 $selectedOptionValueData[] = [
                     'id' => $itemOption->getId(),
                     'label' => $optionValue->getTitle(),
                     'price' => [
                         'type' => strtoupper($optionValue->getPriceType()),
-                        'units' => '$',
+                        'units' => $priceValueUnits,
                         'value' => $optionValue->getPrice(),
                     ],
                 ];
@@ -183,5 +200,30 @@ class CustomizableOptions implements ResolverInterface
             'values' => $selectedOptionValueData,
             'sort_order' => $option->getSortOrder(),
         ];
+    }
+
+    /**
+     * @param string $priceType
+     */
+    private function getPriceValueUnits(string $priceType): string
+    {
+        if (ProductPriceOptionsInterface::VALUE_PERCENT == $priceType) {
+            return '%';
+        }
+
+        return $this->getCurrencySymbol();
+    }
+
+    /**
+     * Get currency symbol
+     *
+     * @return string
+     */
+    private function getCurrencySymbol(): string
+    {
+        /** @var Store|StoreInterface $store */
+        $store = $this->storeManager->getStore();
+
+        return $store->getBaseCurrency()->getCurrencySymbol();
     }
 }
