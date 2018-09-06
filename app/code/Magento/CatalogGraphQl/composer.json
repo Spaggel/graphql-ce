@@ -10,11 +10,14 @@
         "magento/module-search": "*",
         "magento/module-store": "*",
         "magento/module-eav-graph-ql": "*",
-        "magento/framework": "*"
+        "magento/framework": "*",
+        "magento/module-authorization": "*",
+        "magento/module-quote": "*"
     },
     "suggest": {
         "magento/module-graph-ql": "*",
-        "magento/module-store-graph-ql": "*"
+        "magento/module-store-graph-ql": "*",
+        "magento/module-quote-graph-ql": "*"
     },
     "license": [
         "OSL-3.0",

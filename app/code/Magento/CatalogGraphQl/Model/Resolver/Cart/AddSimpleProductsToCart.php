@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-namespace Magento\SimpleProductGraphQl\Model\Resolver\Cart;
+namespace Magento\CatalogGraphQl\Model\Resolver\Cart;
 
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -155,8 +155,9 @@ class AddSimpleProductsToCart implements ResolverInterface
     }
 
     /**
-     * @param array $cartItem
+     * Format GraphQl input data to a shape that buy request has
      *
+     * @param array $cartItem
      * @return DataObject
      */
     private function getBuyRequest($cartItem): DataObject
@@ -178,8 +179,9 @@ class AddSimpleProductsToCart implements ResolverInterface
     }
 
     /**
-     * @param CartInterface|Quote $cart
+     * Collecting cart errors
      *
+     * @param CartInterface|Quote $cart
      * @return string
      */
     private function getCartErrors($cart): string
@@ -195,6 +197,8 @@ class AddSimpleProductsToCart implements ResolverInterface
     }
 
     /**
+     * Retrieving quote mode based on customer authorization
+     *
      * @param string $cartHash
      * @return CartInterface|Quote
      * @throws NoSuchEntityException
